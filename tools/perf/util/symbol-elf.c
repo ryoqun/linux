@@ -1309,9 +1309,9 @@ dso__load_sym_internal(struct dso *dso, struct map *map, struct symsrc *syms_ss,
 					   "symbol: %s st_value: %#" PRIx64 "\n",
 					   __func__, elf_name, (u64)sym.st_value);
 				pr_debug4("%s: adjusting symbol: st_value: %#" PRIx64 " "
-					"sh_addr: %#" PRIx64 " sh_offset: %#" PRIx64 "\n",
+                                       "sh_addr: %#" PRIx64 " sh_offset: %#" PRIx64 " elf_neme: %s\n",
 					__func__, (u64)sym.st_value, (u64)shdr.sh_addr,
-					(u64)shdr.sh_offset);
+                                       (u64)shdr.sh_offset, elf_name);
 				/*
 				 * Fail to find program header, let's rollback
 				 * to use shdr.sh_addr and shdr.sh_offset to
@@ -1323,10 +1323,18 @@ dso__load_sym_internal(struct dso *dso, struct map *map, struct symsrc *syms_ss,
 				sym.st_value -= shdr.sh_addr - shdr.sh_offset;
 			} else {
 				pr_debug4("%s: adjusting symbol: st_value: %#" PRIx64 " "
-					"p_vaddr: %#" PRIx64 " p_offset: %#" PRIx64 "\n",
+                                       "p_vaddr: %#" PRIx64 " p_offset: %#" PRIx64 " dso_name: %s\n",
 					__func__, (u64)sym.st_value, (u64)phdr.p_vaddr,
-					(u64)phdr.p_offset);
-				sym.st_value -= phdr.p_vaddr - phdr.p_offset;
+                                       (u64)phdr.p_offset, dso->symsrc_filename);
+                               if (dso->symsrc_filename != NULL && strcmp(dso->symsrc_filename, "/usr/lib/debug/.build-id/e9/0beb1f2f7eb9f9cd80a2c81f3495e8ee82fc48.debug") == 0) {
+                                       pr_debug4("really adjust....\n");
+                                       sym.st_value -= phdr.p_vaddr - 0x29000;
+                               } else if (dso->symsrc_filename != NULL && strcmp(dso->symsrc_filename, "/root/.debug/.build-id/e9/0beb1f2f7eb9f9cd80a2c81f3495e8ee82fc48/debug") == 0) {
+                                       pr_debug4("really adjust....\n");
+                                       sym.st_value -= phdr.p_vaddr - 0x29000;
+                               } else {
+                                       sym.st_value -= phdr.p_vaddr - phdr.p_offset;
+                               }
 			}
 		}
 
